@@ -20,7 +20,8 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '21'
-          distribution: 'adoptopenjdk'
+          distribution: 'temurin'
+          cache: maven
 
       # Maven 빌드 및 패키징
       - name: Build with Maven
