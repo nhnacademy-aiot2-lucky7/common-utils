@@ -3,19 +3,18 @@ name: Deploy to GitHub Packages
 on:
   push:
     branches:
-      - develop
-    # 또는 원하는 브랜치로 변경
+      - develop  # 필요 시 다른 브랜치로 수정
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 코드 체크아웃
+      # 1. 레포지토리 코드 체크아웃
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Java 설정
+      # 2. JDK 설정 (temurin: OpenJDK)
       - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
@@ -23,12 +22,24 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Maven 빌드 및 패키징
+      # 3. settings.xml 생성 (깃허브 패키지 인증용)
+      - name: Set up settings.xml for GitHub Packages
+        run: |
+          mkdir -p ~/.m2
+          echo "<settings>
+            <servers>
+              <server>
+                <id>github-packages</id>
+                <username>${{ github.actor }}</username>
+                <password>${{ secrets.GITHUB_TOKEN }}</password>
+              </server>
+            </servers>
+          </settings>" > ~/.m2/settings.xml
+
+      # 4. 빌드
       - name: Build with Maven
         run: mvn clean install
 
-      # GitHub 패키지 레지스트리에 배포
+      # 5. GitHub Packages에 배포
       - name: Deploy to GitHub Packages
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: mvn deploy
