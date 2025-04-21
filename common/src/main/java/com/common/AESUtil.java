@@ -19,7 +19,7 @@ public class AESUtil {
     private final SecretKeySpec keySpec;
 
     public AESUtil() {
-        String base64Key = System.getenv(AES_SECRET);
+        String base64Key = System.getProperty(AES_SECRET);
 
         if (base64Key == null || base64Key.trim().isBlank()) {
             throw new AesCryptoException("환경 변수 '" + AES_SECRET + "'가 설정되지 않았습니다.");
