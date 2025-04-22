@@ -3,7 +3,8 @@ package com.common;
 import com.common.exception.AesCryptoException;
 import org.junit.jupiter.api.Test;
 
-import java.util.Base64;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -29,6 +30,7 @@ class AESUtilTest {
         assertEquals(originalText, decrypted); // 복호화된 값이 원본 평문과 같음 확인
     }
 
+    // Base64가 아닌 키 사용 시 예외 발생 확인
     @Test
     void testInvalidKeyLength() {
         String shortKey = Base64.getEncoder().encodeToString("short_key".getBytes()); // 길이가 짧은 키
@@ -44,6 +46,7 @@ class AESUtilTest {
         assertTrue(exception.getMessage().contains("256비트")); // 메시지에 '256비트'가 포함되어 있는지 확인
     }
 
+    // 키 길이 부족 시 예외 발생 확인
     @Test
     void testInvalidBase64Key() {
         String invalidBase64Key = "not_base64!!!"; // 잘못된 Base64 키 설정
