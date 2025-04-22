@@ -1,7 +1,10 @@
 package com.common;
 
 import com.common.exception.AesCryptoException;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
@@ -10,21 +13,23 @@ import java.security.SecureRandom;
 import java.util.Base64;
 
 @Slf4j
+@Component
 public class AESUtil {
+
     private static final String ALGORITHM = "AES/GCM/NoPadding";
-    private static final int IV_SIZE = 12; // 96비트
+    private static final int IV_SIZE = 12;
     private static final int TAG_BIT_LENGTH = 128;
-    private static final String AES_SECRET = "AES_SECRET_KEY";
 
-    private final SecretKeySpec keySpec;
+    @Value("${aes.secret.key}")
+    private String base64Key;
 
-    public AESUtil() {
-        String base64Key = System.getProperty(AES_SECRET);
+    private SecretKeySpec keySpec;
 
+    @PostConstruct
+    private void init() {
         if (base64Key == null || base64Key.trim().isBlank()) {
-            throw new AesCryptoException("환경 변수 '" + AES_SECRET + "'가 설정되지 않았습니다.");
+            throw new AesCryptoException("AES 대칭키가 설정되지 않았습니다.");
         }
-
         this.keySpec = getKeySpecFromBase64(base64Key);
     }
 
