@@ -2,7 +2,6 @@ package com.common;
 
 import com.common.exception.AesCryptoException;
 import jakarta.annotation.PostConstruct;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -12,7 +11,6 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-@Slf4j
 @Component
 public class AESUtil {
 
