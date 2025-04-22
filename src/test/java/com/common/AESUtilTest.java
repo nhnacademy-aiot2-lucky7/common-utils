@@ -3,8 +3,7 @@ package com.common;
 import com.common.exception.AesCryptoException;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.*;
 
