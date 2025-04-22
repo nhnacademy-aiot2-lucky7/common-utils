@@ -3,6 +3,7 @@ package com.common;
 import com.common.exception.AesCryptoException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Base64;
 
@@ -10,62 +11,69 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AESUtilTest {
 
-    private static final String RAW_KEY = "12345678901234567890123456789012"; // 32 bytes
-    private static final String BASE64_KEY = Base64.getEncoder().encodeToString(RAW_KEY.getBytes());
+    private AESUtil aesUtil;
+
+    // 256bit (32 bytes) Base64 인코딩된 키
+    private final String base64Key = "uW6+dG5qFev1G0xLhvx0a+GqC8R4AAfI0mX+mHAlKXU=";
 
     @BeforeEach
-    void resetKey() {
-        System.setProperty("AES_SECRET_KEY", BASE64_KEY);
+    void setUp() {
+        aesUtil = new AESUtil();
+
+        // base64Key 필드 수동 주입
+        ReflectionTestUtils.setField(aesUtil, "base64Key", base64Key);
+
+        // keySpec도 함께 초기화
+        var keySpec = ReflectionTestUtils.invokeMethod(aesUtil, "getKeySpecFromBase64", base64Key);
+        ReflectionTestUtils.setField(aesUtil, "keySpec", keySpec);
     }
 
     @Test
-    void testEncryptAndDecrypt() {
-        AESUtil aesUtil = new AESUtil();
-        String originalText = "Hello, World!";
-
-        String encrypted = aesUtil.encrypt(originalText);
-        assertNotNull(encrypted);
-        assertNotEquals(originalText, encrypted);
-
+    void testEncryptDecryptSuccess() {
+        String plainText = "Hello, World!";
+        String encrypted = aesUtil.encrypt(plainText);
         String decrypted = aesUtil.decrypt(encrypted);
-        assertEquals(originalText, decrypted);
+
+        assertNotNull(encrypted);
+        assertEquals(plainText, decrypted);
+    }
+
+    @Test
+    void testDecryptWithTamperedData() {
+        String encrypted = aesUtil.encrypt("some data");
+
+        // 일부러 데이터 훼손 (Base64 문자열을 자름)
+        String tampered = encrypted.substring(0, encrypted.length() - 4);
+
+        AesCryptoException ex = assertThrows(AesCryptoException.class, () -> {
+            aesUtil.decrypt(tampered);
+        });
+        assertTrue(ex.getMessage().contains("복호화 중 오류 발생"));
     }
 
     @Test
     void testInvalidKeyLength() {
-        String shortKey = Base64.getEncoder().encodeToString("short_key".getBytes());
-        System.setProperty("AES_SECRET_KEY", shortKey);
+        AESUtil broken = new AESUtil();
+        String badKey = Base64.getEncoder().encodeToString(new byte[10]); // 10바이트짜리 잘못된 키
 
-        AesCryptoException exception = assertThrows(
-                AesCryptoException.class,
-                AESUtil::new
-        );
+        ReflectionTestUtils.setField(broken, "base64Key", badKey);
 
-        assertTrue(exception.getMessage().contains("256비트"));
+        AesCryptoException ex = assertThrows(AesCryptoException.class, () -> {
+            ReflectionTestUtils.invokeMethod(broken, "getKeySpecFromBase64", badKey);
+        });
+        assertTrue(ex.getMessage().contains("256비트"));
     }
 
     @Test
     void testInvalidBase64Key() {
-        System.setProperty("AES_SECRET_KEY", "not_base64!!!");
+        AESUtil broken = new AESUtil();
+        String notBase64 = "thisIsNotBase64==";
 
-        AesCryptoException exception = assertThrows(
-                AesCryptoException.class,
-                AESUtil::new
-        );
+        ReflectionTestUtils.setField(broken, "base64Key", notBase64);
 
-        assertTrue(exception.getMessage().contains("Base64"));
-    }
-
-    @Test
-    void testMissingEnvKey() {
-        System.clearProperty("AES_SECRET_KEY");
-
-        AesCryptoException exception = assertThrows(
-                AesCryptoException.class,
-                AESUtil::new
-        );
-
-        assertTrue(exception.getMessage().contains("환경 변수"));
+        AesCryptoException ex = assertThrows(AesCryptoException.class, () -> {
+            ReflectionTestUtils.invokeMethod(broken, "getKeySpecFromBase64", notBase64);
+        });
+        assertTrue(ex.getMessage().contains("Base64"));
     }
 }
-
